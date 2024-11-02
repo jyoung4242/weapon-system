@@ -1,0 +1,13 @@
+- [x] Use generated room at 1:1 correct size;
+- [x] Use 8 dir player animations;
+- [ ] use Bug that goes up and down on side of room;
+- [ ] primary weapon animations
+- [ ] raycasted collision
+- [ ] bug knockback and recovery;
+- [ ] wall collision and recover;
+
+secondary weaopon:
+
+- [ ] change muzzleflash color
+- [ ] add child spawn of weapon animation
+- [ ] add child collision for target
