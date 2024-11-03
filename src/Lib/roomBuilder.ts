@@ -1,5 +1,7 @@
 import {
   Actor,
+  Collider,
+  CollisionContact,
   CollisionGroup,
   CollisionGroupManager,
   CollisionType,
@@ -10,6 +12,8 @@ import {
   ImageSource,
   Label,
   Random,
+  Shape,
+  Side,
   Sprite,
   TileMap,
   TileMapOptions,
@@ -21,6 +25,25 @@ import { PerlinGenerator } from "@excaliburjs/plugin-perlin";
 import { wallColliders } from "../main";
 
 const FLOORTHRESHHOLD = 0.65;
+
+export class Wall extends Actor {
+  constructor(config: { name: string; x: number; y: number; width: number; height: number }) {
+    super({
+      name: config.name,
+      x: config.x,
+      y: config.y,
+      width: config.width,
+      height: config.height,
+      z: 2,
+      anchor: Vector.Zero,
+      collisionGroup: wallColliders,
+    });
+  }
+
+  onCollisionStart(self: Collider, other: Collider, side: Side, contact: CollisionContact): void {
+    console.log("wall collision");
+  }
+}
 
 const generator = new PerlinGenerator({
   seed: Date.now(), // random seed
@@ -554,38 +577,32 @@ export class RoomBuilder {
     room.addChild(player2ScoreField);
 
     //add bullet colliders
-    class leftWall1 extends Actor {
+    class leftWall1 extends Wall {
       constructor() {
         super({
-          name: "leftWall",
-          x: 16,
-          y: 48,
+          name: "leftWall1",
+          x: 24,
+          y: 96,
           width: 16,
-          height: 120,
-          z: 2,
-          anchor: Vector.Zero,
-          collisionGroup: wallColliders,
+          height: 96,
         });
       }
     }
     room.addChild(new leftWall1());
-    class leftWall2 extends Actor {
+
+    class leftWall2 extends Wall {
       constructor() {
         super({
           name: "leftWall",
-          x: 16,
-          y: 176,
+          x: 24,
+          y: 200,
           width: 16,
-          height: 96,
-          z: 2,
-          anchor: Vector.Zero,
-          collisionGroup: wallColliders,
-          collisionType: CollisionType.Passive,
+          height: 144,
         });
       }
     }
     room.addChild(new leftWall2());
-    class bottomwall1 extends Actor {
+    class bottomwall1 extends Wall {
       constructor() {
         super({
           name: "bottomwall",
@@ -593,13 +610,10 @@ export class RoomBuilder {
           y: 272,
           width: 144,
           height: 16,
-          z: 2,
-          anchor: Vector.Zero,
-          collisionGroup: wallColliders,
         });
       }
     }
-    class bottomwall2 extends Actor {
+    class bottomwall2 extends Wall {
       constructor() {
         super({
           name: "bottomwall",
@@ -607,9 +621,6 @@ export class RoomBuilder {
           y: 272,
           width: 144,
           height: 16,
-          z: 2,
-          anchor: Vector.Zero,
-          collisionGroup: wallColliders,
         });
       }
     }
@@ -617,7 +628,7 @@ export class RoomBuilder {
     room.addChild(new bottomwall1());
     room.addChild(new bottomwall2());
 
-    class rightWall1 extends Actor {
+    class rightWall1 extends Wall {
       constructor() {
         super({
           name: "rightWall",
@@ -625,14 +636,11 @@ export class RoomBuilder {
           y: 48,
           width: 16,
           height: 120,
-          z: 2,
-          anchor: Vector.Zero,
-          collisionGroup: wallColliders,
         });
       }
     }
 
-    class rightWall2 extends Actor {
+    class rightWall2 extends Wall {
       constructor() {
         super({
           name: "rightWall",
@@ -640,9 +648,6 @@ export class RoomBuilder {
           y: 176,
           width: 16,
           height: 96,
-          z: 2,
-          anchor: Vector.Zero,
-          collisionGroup: wallColliders,
         });
       }
     }
@@ -650,7 +655,7 @@ export class RoomBuilder {
     room.addChild(new rightWall1());
     room.addChild(new rightWall2());
 
-    class topWall1 extends Actor {
+    class topWall1 extends Wall {
       constructor() {
         super({
           name: "topWall",
@@ -658,14 +663,11 @@ export class RoomBuilder {
           y: 32,
           width: 144,
           height: 16,
-          z: 2,
-          anchor: Vector.Zero,
-          collisionGroup: wallColliders,
         });
       }
     }
 
-    class topWall2 extends Actor {
+    class topWall2 extends Wall {
       constructor() {
         super({
           name: "topWall",
@@ -673,9 +675,6 @@ export class RoomBuilder {
           y: 32,
           width: 172,
           height: 16,
-          z: 2,
-          anchor: Vector.Zero,
-          collisionGroup: wallColliders,
         });
       }
     }

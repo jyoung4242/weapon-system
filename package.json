@@ -15,7 +15,7 @@
   "dependencies": {
     "@excaliburjs/plugin-perlin": "^0.29.0",
     "@peasy-lib/peasy-ui": "^0.9.58",
-    "excalibur": "^0.30.0-alpha.1241"
+    "excalibur": "^0.30.0-alpha.1246"
   },
   "devDependencies": {
     "json": "^11.0.0",

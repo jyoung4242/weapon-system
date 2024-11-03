@@ -1,7 +1,7 @@
 // main.ts
 import "./style.css";
 import { UI } from "@peasy-lib/peasy-ui";
-import { Engine, DisplayMode, Vector, CollisionGroup, SpatialPartitionStrategy } from "excalibur";
+import { Engine, DisplayMode, Vector, CollisionGroup } from "excalibur";
 import { model, template } from "./UI/UI";
 import { loader } from "./resources";
 import { RoomBuilder } from "./Lib/roomBuilder";
@@ -13,23 +13,18 @@ import { Bug } from "./Actors/bug";
 await UI.create(document.body, model, template).attached;
 
 const game = new Engine({
-  physics: {
-    spatialPartition: SpatialPartitionStrategy.DynamicTree,
-  },
   width: 800, // the width of the canvas
   height: 600, // the height of the canvas
   canvasElementId: "cnv", // the DOM canvas element ID, if you are providing your own
   displayMode: DisplayMode.Fixed, // the display mode
   pixelArt: true,
 });
-game.toggleDebug();
+//game.toggleDebug();
 
 export const playerColliders = new CollisionGroup("playerCollider", 0b0001, ~0b1100);
 export const bulletColliders = new CollisionGroup("bulletColliders", 0b0010, ~0b1100);
-export const wallColliders = new CollisionGroup("wallColliders", 0b0100, ~0b1011);
+export const wallColliders = new CollisionGroup("wallColliders", 0b0101, ~0b1011);
 export const enemyColliders = new CollisionGroup("enemyColliders", 0b1000, ~0b0111);
-
-setupColliders();
 
 let myGamePadController = new GamepadControl(game);
 let myKeyboardController = new KeyboardControl(game);
@@ -52,14 +47,3 @@ game.onPreUpdate = (engine: Engine, delta: number) => {
   myKeyboardController.update(engine, delta);
   myTouchController.update(engine, delta);
 };
-
-function setupColliders() {
-  //setup CollisionGroups
-  enemyColliders.canCollide(playerColliders);
-  enemyColliders.canCollide(wallColliders);
-  enemyColliders.canCollide(bulletColliders);
-  playerColliders.canCollide(wallColliders);
-  playerColliders.canCollide(enemyColliders);
-  bulletColliders.canCollide(wallColliders);
-  bulletColliders.canCollide(enemyColliders);
-}

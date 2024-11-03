@@ -10,6 +10,10 @@ import {
   CollisionGroup,
   Debug,
   Color,
+  CollisionType,
+  Collider,
+  CollisionContact,
+  Side,
 } from "excalibur";
 import { ExFSM, ExState } from "../Lib/ExFSM";
 import { tintShader } from "../Shaders/tint blue";
@@ -66,6 +70,7 @@ import {
 import { ActorSignals } from "../Lib/CustomEmitterManager";
 import { muzzleFlashAnim } from "../Animations/muzzleflashAnimation";
 import { enemyColliders, playerColliders, wallColliders } from "../main";
+import { Wall } from "../Lib/roomBuilder";
 
 enum StickPosition {
   "Left" = "Left",
@@ -165,8 +170,8 @@ class Muzzleflash extends Actor {
   fireRay(engine: Engine) {
     const convertedDirection = VectorDirMap[this.direction];
 
-    const ray = new Ray(this.globalPos, convertedDirection);
-    //Debug.drawRay(ray, { color: Color.Red, distance: 2000 });
+    const ray = new Ray(this.getGlobalPos(), convertedDirection);
+    Debug.drawRay(ray, { color: Color.Red, distance: 2000 });
     const hits = engine.currentScene.physics.rayCast(ray, {
       searchAllColliders: false,
       collisionMask: 0b1100,
@@ -473,6 +478,16 @@ export class Player extends Actor {
 
     this.addChild(this.upper);
     this.addChild(this.lower);
+  }
+
+  onCollisionStart(self: Collider, other: Collider, side: Side, lastContact: CollisionContact): void {
+    console.log("collided with", other.owner);
+
+    //test if other.owner is of a instance Wall
+    if (other.owner instanceof Wall) {
+      //if so, then we can move
+      this.vel = new Vector(0, 0);
+    }
   }
 
   onPreUpdate(engine: Engine, delta: number): void {

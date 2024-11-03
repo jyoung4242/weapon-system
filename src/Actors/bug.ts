@@ -24,6 +24,7 @@ export class Bug extends Actor {
       height: 16,
       //radius: 16,
       collisionGroup: enemyColliders,
+      z: 4,
     });
     this.graphics.use(bugAnimation);
   }
