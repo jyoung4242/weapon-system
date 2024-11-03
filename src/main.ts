@@ -23,7 +23,7 @@ const game = new Engine({
 
 export const playerColliders = new CollisionGroup("playerCollider", 0b0001, ~0b1100);
 export const bulletColliders = new CollisionGroup("bulletColliders", 0b0010, ~0b1100);
-export const wallColliders = new CollisionGroup("wallColliders", 0b0101, ~0b1011);
+export const wallColliders = new CollisionGroup("wallColliders", 0b0100, ~0b1011);
 export const enemyColliders = new CollisionGroup("enemyColliders", 0b1000, ~0b0111);
 
 let myGamePadController = new GamepadControl(game);
