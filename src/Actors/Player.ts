@@ -1,22 +1,6 @@
-import {
-  Actor,
-  Engine,
-  Vector,
-  Graphic,
-  Material,
-  toRadians,
-  CollisionGroupManager,
-  Ray,
-  CollisionGroup,
-  Debug,
-  Color,
-  CollisionType,
-  Collider,
-  CollisionContact,
-  Side,
-} from "excalibur";
+import { Actor, Engine, Vector, Graphic, Material, toRadians, Ray, Debug, Color, Collider, CollisionContact, Side } from "excalibur";
 import { ExFSM, ExState } from "../Lib/ExFSM";
-import { tintShader } from "../Shaders/tint blue";
+import { tintShader } from "../Shaders/tint";
 import {
   plyrAnimIdleDown,
   plyrAnimIdleDownLeft,
@@ -69,8 +53,11 @@ import {
 } from "../Animations/playerAnimations";
 import { ActorSignals } from "../Lib/CustomEmitterManager";
 import { muzzleFlashAnim } from "../Animations/muzzleflashAnimation";
-import { enemyColliders, playerColliders, wallColliders } from "../main";
+import { playerColliders } from "../main";
 import { Wall } from "../Lib/roomBuilder";
+import { Bug } from "./bug";
+import { WeaponSystem, WeaponType } from "../Components/Weapon";
+import { Spreader } from "../Components/Weapons/Spreader";
 
 enum StickPosition {
   "Left" = "Left",
@@ -142,10 +129,13 @@ const VectorDirMap = {
 };
 
 class Muzzleflash extends Actor {
+  weaponSystem: WeaponSystem;
   direction: Direction = "Down";
-  isVisible: boolean = true;
+  vecDir: Vector = VectorDirMap[this.direction];
+  isVisible: boolean = false;
   muzzleGraphics: Graphic;
   flashMaterial: Material | null = null;
+  flashColor: Color = Color.fromHex("#63DEFF");
   fireRateLimit = 10;
   fireRateTik = 0;
   constructor(private owner: Upper) {
@@ -161,6 +151,8 @@ class Muzzleflash extends Actor {
     this.muzzleGraphics = muzzleFlashAnim;
     this.rotation = toRadians(90);
     this.z = -1;
+    this.weaponSystem = new WeaponSystem(this);
+    this.addComponent(this.weaponSystem);
   }
 
   setState(direction: Direction) {
@@ -180,8 +172,11 @@ class Muzzleflash extends Actor {
     });
 
     if (hits && hits.length > 0) {
-      //@ts-ignore
-      console.log("something hit", hits[0].body.owner.name);
+      if (hits[0].body.owner instanceof Bug) {
+        hits[0].body.owner.showDamage(convertedDirection);
+      } else if (hits[0].body.owner instanceof Wall) {
+        hits[0].body.owner.showSparks(engine, hits[0].point);
+      }
     }
 
     return hits;
@@ -193,13 +188,25 @@ class Muzzleflash extends Actor {
     ActorSignals.on("shoot", data => {
       if (this.owner.isArmed) this.isVisible = true;
     });
-    ActorSignals.on("stopshoot", data => (this.isVisible = false));
+    ActorSignals.on("stopshoot", data => {
+      console.log("stopshoot");
+
+      this.isVisible = false;
+    });
+
+    //setup tint shader
     this.flashMaterial = engine.graphicsContext.createMaterial({
       name: "outline",
       fragmentSource: tintShader,
     });
     this.graphics.material = this.flashMaterial;
     if (this.flashMaterial) this.flashMaterial.use();
+
+    this.flashMaterial.update(shader => {
+      shader.setUniform("uniform3f", "U_color", this.flashColor.r / 255, this.flashColor.g / 255, this.flashColor.b / 255);
+    });
+
+    // Signals
     ActorSignals.on("walkLeft", data => this.setState("Left"));
     ActorSignals.on("walkRight", data => this.setState("Right"));
     ActorSignals.on("walkDown", data => this.setState("Down"));
@@ -208,27 +215,57 @@ class Muzzleflash extends Actor {
     ActorSignals.on("walkDownLeft", data => this.setState("downLeft"));
     ActorSignals.on("walkDownRight", data => this.setState("downRight"));
     ActorSignals.on("walkUpLeft", data => this.setState("upLeft"));
+    ActorSignals.on("rightStickLeft", data => this.setState("Left"));
+    ActorSignals.on("rightStickRight", data => this.setState("Right"));
+    ActorSignals.on("rightStickDown", data => this.setState("Down"));
+    ActorSignals.on("rightStickUp", data => this.setState("Up"));
+    ActorSignals.on("rightStickUpRight", data => this.setState("upRight"));
+    ActorSignals.on("rightStickDownLeft", data => this.setState("downLeft"));
+    ActorSignals.on("rightStickDownRight", data => this.setState("downRight"));
+    ActorSignals.on("rightStickUpLeft", data => this.setState("upLeft"));
+    this.weaponSystem.loadWeapon(new Spreader());
+    this.flashColor = this.weaponSystem.switchWeapon(WeaponType.spreader);
+    console.log("starting color", this.flashColor);
+
+    ActorSignals.on("outOfAmmo", data => {
+      console.log("out of ammo");
+      this.flashColor = this.weaponSystem.switchWeapon(WeaponType.primary);
+      console.log("new color", this.flashColor);
+    });
   }
 
   onPreUpdate(engine: Engine, delta: number): void {
+    this.vecDir = VectorDirMap[this.direction];
+
+    if (this.flashMaterial)
+      this.flashMaterial.update(shader => {
+        shader.setUniform("uniform3f", "U_color", this.flashColor.r / 255, this.flashColor.g / 255, this.flashColor.b / 255);
+      });
+
     if (this.isVisible) {
       this.pos = MuzzleMap[this.direction].position;
       this.rotation = toRadians(MuzzleMap[this.direction].angle);
       this.z = MuzzleMap[this.direction].z;
       this.graphics.use(this.muzzleGraphics);
-      this.fireRateTik++;
-      if (this.fireRateTik > this.fireRateLimit) {
-        this.fireRateTik = 0;
-        this.fireRay(engine);
-      }
+
+      if (this.weaponSystem.currentWeapon == "primary") {
+        this.weaponSystem.setFiringStatus(false);
+        this.fireRateTik++;
+        if (this.fireRateTik > this.fireRateLimit) {
+          this.fireRateTik = 0;
+          this.fireRay(engine);
+        }
+      } else this.weaponSystem.setFiringStatus(true);
     } else {
       this.graphics.hide();
+      this.weaponSystem.setFiringStatus(false);
     }
   }
 }
 
 class Upper extends Actor {
   facing: Direction;
+  gamePadDetected: boolean = false;
   lStick: StickPosition = StickPosition.Idle;
   rStick: StickPosition = StickPosition.Idle;
   isArmed: boolean = true;
@@ -249,6 +286,8 @@ class Upper extends Actor {
   }
 
   onInitialize(engine: Engine): void {
+    ActorSignals.on("gamepadDetected", data => (this.gamePadDetected = true));
+
     ActorSignals.on("leftStickDown", data => (this.lStick = StickPosition.Down));
     ActorSignals.on("leftStickUp", data => (this.lStick = StickPosition.Up));
     ActorSignals.on("leftStickLeft", data => (this.lStick = StickPosition.Left));
@@ -297,10 +336,10 @@ class Upper extends Actor {
   onPreUpdate(engine: Engine, delta: number): void {
     let animstate;
 
-    if (this.isArmed && this.rStick != StickPosition.Idle) {
+    if (this.gamePadDetected && this.isArmed && this.rStick != StickPosition.Idle) {
       this.muzzleFlash.setState(this.rStick);
       this.muzzleFlash.isVisible = true;
-    } else this.muzzleFlash.isVisible = false;
+    } else if (this.gamePadDetected && this.isArmed && this.rStick == StickPosition.Idle) this.muzzleFlash.isVisible = false;
 
     if (this.lStick == StickPosition.Idle && this.rStick != StickPosition.Idle) {
       //idle
@@ -462,6 +501,7 @@ class Lower extends Actor {
 }
 
 export class Player extends Actor {
+  collisionDirection: Array<"left" | "right" | "top" | "bottom"> = [];
   upper: Upper = new Upper();
   lower: Lower = new Lower();
   constructor() {
@@ -470,7 +510,7 @@ export class Player extends Actor {
       width: 24,
       height: 24,
       anchor: Vector.Zero,
-      z: 1,
+      z: 4,
       scale: new Vector(2, 2),
       pos: new Vector(250, 250),
       collisionGroup: playerColliders,
@@ -481,44 +521,107 @@ export class Player extends Actor {
   }
 
   onCollisionStart(self: Collider, other: Collider, side: Side, lastContact: CollisionContact): void {
-    console.log("collided with", other.owner);
-
     //test if other.owner is of a instance Wall
     if (other.owner instanceof Wall) {
-      //if so, then we can move
-      this.vel = new Vector(0, 0);
+      switch (side) {
+        case Side.None:
+          this.collisionDirection = [];
+          break;
+        case Side.Top:
+          //check array for top
+          if (this.collisionDirection.indexOf("top") == -1) {
+            this.collisionDirection.push("top");
+          }
+          break;
+        case Side.Bottom:
+          if (this.collisionDirection.indexOf("bottom") == -1) {
+            this.collisionDirection.push("bottom");
+          }
+          break;
+        case Side.Left:
+          if (this.collisionDirection.indexOf("left") == -1) {
+            this.collisionDirection.push("left");
+          }
+          break;
+        case Side.Right:
+          if (this.collisionDirection.indexOf("right") == -1) {
+            this.collisionDirection.push("right");
+          }
+          break;
+      }
+    }
+  }
+
+  onCollisionEnd(self: Collider, other: Collider, side: Side, lastContact: CollisionContact): void {
+    if (other.owner instanceof Wall) {
+      let index;
+      switch (side) {
+        case Side.None:
+          this.collisionDirection = [];
+          break;
+        case Side.Top:
+          index = this.collisionDirection.indexOf("top");
+          if (index > -1) this.collisionDirection.splice(index, 1);
+          break;
+        case Side.Bottom:
+          index = this.collisionDirection.indexOf("bottom");
+          if (index > -1) this.collisionDirection.splice(index, 1);
+          break;
+        case Side.Left:
+          index = this.collisionDirection.indexOf("left");
+          if (index > -1) this.collisionDirection.splice(index, 1);
+          break;
+        case Side.Right:
+          index = this.collisionDirection.indexOf("right");
+          if (index > -1) this.collisionDirection.splice(index, 1);
+          break;
+      }
     }
   }
 
   onPreUpdate(engine: Engine, delta: number): void {
     let playvelocity = 50;
+
     switch (this.lower.lStick) {
       case StickPosition.Left:
-        this.vel = new Vector(-playvelocity, 0);
+        //add collision check
+        if (this.collisionDirection.indexOf("left") == -1) this.vel = new Vector(-playvelocity, 0);
+        else this.vel = new Vector(0, 0);
         break;
       case StickPosition.Right:
-        this.vel = new Vector(playvelocity, 0);
+        if (this.collisionDirection.indexOf("right") == -1) this.vel = new Vector(playvelocity, 0);
+        else this.vel = new Vector(0, 0);
         break;
       case StickPosition.Idle:
         this.vel = new Vector(0, 0);
         break;
       case StickPosition.Up:
-        this.vel = new Vector(0, -playvelocity);
+        if (this.collisionDirection.indexOf("top") == -1) this.vel = new Vector(0, -playvelocity);
+        else this.vel = new Vector(0, 0);
         break;
       case StickPosition.Down:
-        this.vel = new Vector(0, playvelocity);
+        if (this.collisionDirection.indexOf("bottom") == -1) this.vel = new Vector(0, playvelocity);
+        else this.vel = new Vector(0, 0);
         break;
       case StickPosition.UpLeft:
-        this.vel = new Vector(-playvelocity, -playvelocity);
+        if (this.collisionDirection.indexOf("top") == -1 && this.collisionDirection.indexOf("left") == -1)
+          this.vel = new Vector(-playvelocity, -playvelocity);
+        else this.vel = new Vector(0, 0);
         break;
       case StickPosition.UpRight:
-        this.vel = new Vector(playvelocity, -playvelocity);
+        if (this.collisionDirection.indexOf("top") == -1 && this.collisionDirection.indexOf("right") == -1)
+          this.vel = new Vector(playvelocity, -playvelocity);
+        else this.vel = new Vector(0, 0);
         break;
       case StickPosition.DownLeft:
-        this.vel = new Vector(-playvelocity, playvelocity);
+        if (this.collisionDirection.indexOf("bottom") == -1 && this.collisionDirection.indexOf("left") == -1)
+          this.vel = new Vector(-playvelocity, playvelocity);
+        else this.vel = new Vector(0, 0);
         break;
       case StickPosition.DownRight:
-        this.vel = new Vector(playvelocity, playvelocity);
+        if (this.collisionDirection.indexOf("bottom") == -1 && this.collisionDirection.indexOf("right") == -1)
+          this.vel = new Vector(playvelocity, playvelocity);
+        else this.vel = new Vector(0, 0);
         break;
     }
   }

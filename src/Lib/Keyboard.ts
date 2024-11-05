@@ -15,32 +15,26 @@ export class KeyboardControl {
     if (this.keyboardInputTiker >= 3) {
       this.keyboardInputTiker = 0;
 
-      if (engine.input.keyboard.isHeld(Keys.Space)) {
-        ActorSignals.emit("shoot");
-      } else {
-        ActorSignals.emit("stopshoot");
-      }
-
       if (engine.input.keyboard.isHeld(Keys.Left) && engine.input.keyboard.isHeld(Keys.Down)) {
-        ActorSignals.emit("walkDownLeft");
+        ActorSignals.emit("leftStickDownLeft");
         return;
       } else if (engine.input.keyboard.isHeld(Keys.Right) && engine.input.keyboard.isHeld(Keys.Up)) {
-        ActorSignals.emit("walkUpRight");
+        ActorSignals.emit("leftStickUpRight");
         return;
       } else if (engine.input.keyboard.isHeld(Keys.Right) && engine.input.keyboard.isHeld(Keys.Down)) {
-        ActorSignals.emit("walkDownRight");
+        ActorSignals.emit("leftStickDownRight");
         return;
       } else if (engine.input.keyboard.isHeld(Keys.Left) && engine.input.keyboard.isHeld(Keys.Up)) {
-        ActorSignals.emit("walkUpLeft");
+        ActorSignals.emit("leftStickUpLeft");
         return;
       } else if (engine.input.keyboard.isHeld(Keys.Left)) {
-        ActorSignals.emit("walkLeft");
+        ActorSignals.emit("leftStickLeft");
       } else if (engine.input.keyboard.isHeld(Keys.Right)) {
-        ActorSignals.emit("walkRight");
+        ActorSignals.emit("leftStickRight");
       } else if (engine.input.keyboard.isHeld(Keys.Up)) {
-        ActorSignals.emit("walkUp");
+        ActorSignals.emit("leftStickUp");
       } else if (engine.input.keyboard.isHeld(Keys.Down)) {
-        ActorSignals.emit("walkDown");
+        ActorSignals.emit("leftStickDown");
       }
 
       if (
@@ -49,7 +43,7 @@ export class KeyboardControl {
         !engine.input.keyboard.isHeld(Keys.Up) &&
         !engine.input.keyboard.isHeld(Keys.Down)
       ) {
-        ActorSignals.emit("idle");
+        ActorSignals.emit("leftStickIdle");
       }
     }
   }

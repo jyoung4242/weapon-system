@@ -23,6 +23,7 @@ import { floorAccentArray, floortiles, lampanimation, Resources, wallAccentArray
 import { NineSlice, NineSliceConfig, NineSliceStretch } from "./nine";
 import { PerlinGenerator } from "@excaliburjs/plugin-perlin";
 import { wallColliders } from "../main";
+import { Sparks } from "../Actors/sparks";
 
 const FLOORTHRESHHOLD = 0.65;
 
@@ -40,9 +41,14 @@ export class Wall extends Actor {
     });
   }
 
-  onCollisionStart(self: Collider, other: Collider, side: Side, contact: CollisionContact): void {
-    console.log("wall collision");
+  showSparks(engine: Engine, point: Vector): void {
+    if (this.children.find(child => child.name === "sparks")) return;
+    console.log("showing sparks at ", point);
+
+    engine.currentScene.add(new Sparks(point));
   }
+
+  onCollisionStart(self: Collider, other: Collider, side: Side, contact: CollisionContact): void {}
 }
 
 const generator = new PerlinGenerator({
@@ -105,7 +111,7 @@ export class RoomBuilder {
 
       if (isFloorTile(tileIndex, tilemap.columns, tilemap.rows)) {
         let newtile = floortiles.getSprite(this.rng.integer(0, 3), 0);
-        newtile = await PixelSwap.swapSprite(newtile);
+        //newtile = await PixelSwap.swapSprite(newtile);
         tile.addGraphic(newtile);
       }
 
@@ -581,8 +587,8 @@ export class RoomBuilder {
       constructor() {
         super({
           name: "leftWall1",
-          x: 24,
-          y: 96,
+          x: 16,
+          y: 32,
           width: 16,
           height: 96,
         });
@@ -593,9 +599,9 @@ export class RoomBuilder {
     class leftWall2 extends Wall {
       constructor() {
         super({
-          name: "leftWall",
-          x: 24,
-          y: 200,
+          name: "leftWall2",
+          x: 16,
+          y: 144,
           width: 16,
           height: 144,
         });

@@ -1,7 +1,7 @@
 // main.ts
 import "./style.css";
 import { UI } from "@peasy-lib/peasy-ui";
-import { Engine, DisplayMode, Vector, CollisionGroup } from "excalibur";
+import { Engine, DisplayMode, Vector, CollisionGroup, Keys } from "excalibur";
 import { model, template } from "./UI/UI";
 import { loader } from "./resources";
 import { RoomBuilder } from "./Lib/roomBuilder";
@@ -10,6 +10,7 @@ import { GamepadControl } from "./Lib/Gamepad";
 import { KeyboardControl } from "./Lib/Keyboard";
 import { TouchpadController } from "./Lib/Touchpad";
 import { Bug } from "./Actors/bug";
+import { MouseManager } from "./Lib/mousetrack";
 await UI.create(document.body, model, template).attached;
 
 const game = new Engine({
@@ -21,14 +22,15 @@ const game = new Engine({
 });
 //game.toggleDebug();
 
-export const playerColliders = new CollisionGroup("playerCollider", 0b0001, ~0b1100);
-export const bulletColliders = new CollisionGroup("bulletColliders", 0b0010, ~0b1100);
-export const wallColliders = new CollisionGroup("wallColliders", 0b0100, ~0b1011);
-export const enemyColliders = new CollisionGroup("enemyColliders", 0b1000, ~0b0111);
+export const playerColliders = new CollisionGroup("playerCollider", 0b0001, 0b1100);
+export const bulletColliders = new CollisionGroup("bulletColliders", 0b0010, 0b1100);
+export const wallColliders = new CollisionGroup("wallColliders", 0b0100, 0b1011);
+export const enemyColliders = new CollisionGroup("enemyColliders", 0b1000, 0b0111);
 
 let myGamePadController = new GamepadControl(game);
 let myKeyboardController = new KeyboardControl(game);
 let myTouchController = new TouchpadController(game);
+let myMouseController = new MouseManager(game);
 
 const myRoomBuilder = new RoomBuilder(game, Date.now());
 
@@ -39,6 +41,9 @@ game.currentScene.camera.strategy.lockToActor(room);
 
 export const player = new Player();
 export const mybug = new Bug(new Vector(650, 250));
+
+myMouseController.initialize();
+
 game.add(player);
 game.add(mybug);
 
@@ -47,3 +52,9 @@ game.onPreUpdate = (engine: Engine, delta: number) => {
   myKeyboardController.update(engine, delta);
   myTouchController.update(engine, delta);
 };
+
+game.input.keyboard.on("release", ev => {
+  if (ev.key === Keys.ControlLeft) {
+    console.log("weapon toggle");
+  }
+});

@@ -23,6 +23,7 @@ export interface CustomActorEventBus extends ActorEvents {
   shoot: {};
   stopshoot: {};
   toggleArm: {};
+  outOfAmmo: {};
 }
 
 export const ActorSignals = new EventEmitter<CustomActorEventBus>();

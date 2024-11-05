@@ -18,6 +18,9 @@ import weaponUpper from "./Assets/playerupperweapon.png";
 import muzzleFlashImage from "./Assets/muzzleflash.png";
 import playerlegs from "./Assets/playerlegs.png";
 import bug from "./Assets/bug.png";
+import sparks from "./Assets/sparks.png";
+import spreader from "./Assets/spreader.png";
+import spreaderbolt from "./Assets/spreaderbolt.png";
 
 export const Resources = {
   floortiles: new ImageSource(floor),
@@ -38,6 +41,9 @@ export const Resources = {
   muzzleFlashIMG: new ImageSource(muzzleFlashImage),
   playerLegs: new ImageSource(playerlegs),
   bug: new ImageSource(bug),
+  sparks: new ImageSource(sparks),
+  spreaderPickup: new ImageSource(spreader),
+  spreaderBolt: new ImageSource(spreaderbolt),
 };
 
 export const bugSS = SpriteSheet.fromImageSource({
@@ -45,6 +51,16 @@ export const bugSS = SpriteSheet.fromImageSource({
   grid: {
     rows: 1,
     columns: 6,
+    spriteWidth: 16,
+    spriteHeight: 16,
+  },
+});
+
+export const sparksSS = SpriteSheet.fromImageSource({
+  image: Resources.sparks,
+  grid: {
+    rows: 1,
+    columns: 7,
     spriteWidth: 16,
     spriteHeight: 16,
   },
